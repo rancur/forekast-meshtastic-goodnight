@@ -1,0 +1,83 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "forekast-meshtastic-goodnight"
+version = "0.1.0"
+description = "Nightly goodnight broadcast for your Meshtastic mesh — previews tomorrow's Forekast (or any ICS) calendar via MeshMonitor."
+readme = "README.md"
+license = { text = "MIT" }
+requires-python = ">=3.10"
+authors = [{ name = "forekast-meshtastic-goodnight contributors" }]
+keywords = [
+    "meshtastic",
+    "forekast",
+    "ics",
+    "calendar",
+    "mesh-network",
+    "goodnight",
+    "ham-radio",
+    "lora",
+]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Environment :: Console",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: POSIX :: Linux",
+    "Operating System :: MacOS",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Communications :: Ham Radio",
+    "Topic :: System :: Networking",
+]
+dependencies = [
+    "requests>=2.31",
+    "pyyaml>=6.0",
+    "pydantic>=2.5",
+    "click>=8.1",
+    "icalendar>=5.0",
+    "python-dateutil>=2.8",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.4",
+    "pytest-cov>=4.1",
+    "pytest-mock>=3.12",
+    "requests-mock>=1.11",
+    "ruff>=0.4",
+    "mypy>=1.8",
+    "types-requests",
+    "types-PyYAML",
+]
+
+[project.scripts]
+forekast-mesh = "forekast_mesh.__main__:cli"
+
+[project.urls]
+Homepage = "https://github.com/rancur/forekast-meshtastic-goodnight"
+Issues = "https://github.com/rancur/forekast-meshtastic-goodnight/issues"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/forekast_mesh"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py310"
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "UP", "B", "SIM", "C4"]
+ignore = ["E501"]
+
+[tool.mypy]
+python_version = "3.10"
+strict = false
+warn_unused_configs = true
+ignore_missing_imports = true
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-v --tb=short"

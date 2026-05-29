@@ -1,0 +1,41 @@
+# forekast-meshtastic-goodnight — example config
+# Copy to config.yaml (gitignored) and edit. Environment variables override these values.
+
+calendar:
+  # Public ICS feed. Forekast.com gives you one at
+  #   https://forekast.com/<your-handle>/calendar.ics
+  # Any ICS works (Google Calendar "secret iCal", self-hosted CalDAV, static .ics).
+  url: "${CALENDAR_URL}"
+  timeout_seconds: 15
+  max_attempts: 3
+  retry_sleep_seconds: 10
+
+meshmonitor:
+  url: "http://localhost:8080"
+  api_token: "${MESHMONITOR_API_TOKEN}"
+  channel_index: 0
+
+  # Retry envelope for the MeshMonitor POST
+  retry_max_attempts: 3
+  retry_sleep_seconds: 30
+  retry_timeout_seconds: 15
+
+message:
+  # The opener.
+  greeting: "Goodnight mesh! Tomorrow:"
+  # What to say if tomorrow has no events.
+  no_events_suffix: "Nothing scheduled"
+  # Optional pointer to a DM auto-responder that exposes the full list.
+  reply_hint: "DM 'forekast tomorrow' for full list"
+
+  # Trim to fit Meshtastic's ~200 byte limit
+  max_events: 2
+  max_event_chars: 150
+  max_chars: 200
+
+# "Tomorrow" is resolved in this timezone — Forekast events are local-day,
+# so a UTC host without this set would broadcast the wrong day at 09:00 UTC.
+timezone: "America/Phoenix"
+
+logging:
+  level: INFO

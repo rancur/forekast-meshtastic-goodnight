@@ -1,0 +1,13 @@
+[Unit]
+Description=forekast-mesh: nightly goodnight + tomorrow's events broadcast
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+User={user}
+WorkingDirectory={working_dir}
+EnvironmentFile=-{working_dir}/.env
+ExecStart={binary} post-goodnight
+Nice=10
+TimeoutStartSec=120

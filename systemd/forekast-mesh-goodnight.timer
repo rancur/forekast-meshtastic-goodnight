@@ -1,0 +1,14 @@
+[Unit]
+Description=forekast-mesh: nightly goodnight broadcast at 21:00 local
+
+[Timer]
+# Fires once per day at 9pm local time.
+OnCalendar=*-*-* 21:00:00
+# If we missed last night's window (host was off), still fire on next boot.
+Persistent=true
+# Small jitter so multiple hosts don't all hit the calendar feed at :00.
+RandomizedDelaySec=60s
+Unit=forekast-mesh-goodnight.service
+
+[Install]
+WantedBy=timers.target
