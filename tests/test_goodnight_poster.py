@@ -60,10 +60,10 @@ def test_post_goodnight_no_events_still_broadcasts(
     assert mm.post_message.call_count == 1
 
 
-def test_post_goodnight_calendar_failure_still_broadcasts(
+def test_post_goodnight_calendar_failure_stays_silent(
     stub_config: AppConfig, target_date: date
 ) -> None:
-    """Calendar offline shouldn't silence the mesh — degrade to no-events."""
+    """A dead calendar is not an empty calendar, so nothing goes on the air."""
     fc = MagicMock()
     fc.get_tomorrow.return_value = target_date
     fc.fetch_ics.side_effect = ForecastFetchError("timeout")
@@ -71,9 +71,27 @@ def test_post_goodnight_calendar_failure_still_broadcasts(
     mm.post_message.return_value = True
 
     result = post_goodnight(stub_config, forecast_client=fc, meshmonitor_client=mm)
-    assert result.success is True
+    assert result.success is False
+    assert result.sent is False
+    assert result.message == ""
     assert result.reason == "timeout"
-    assert mm.post_message.call_count == 1
+    assert mm.post_message.call_count == 0
+
+
+def test_post_goodnight_unparseable_calendar_stays_silent(
+    stub_config: AppConfig, target_date: date
+) -> None:
+    fc = MagicMock()
+    fc.get_tomorrow.return_value = target_date
+    fc.fetch_ics.return_value = b"ICS"
+    fc.events_for_date.side_effect = ForecastFetchError("could not parse")
+    mm = MagicMock()
+
+    result = post_goodnight(stub_config, forecast_client=fc, meshmonitor_client=mm)
+    assert result.success is False
+    assert result.sent is False
+    assert result.reason == "could not parse"
+    assert mm.post_message.call_count == 0
 
 
 def test_post_goodnight_calendar_failure_in_dry_run_does_not_send(

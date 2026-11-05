@@ -34,6 +34,12 @@ class CalendarEvent:
     start: date
 
 
+def _looks_like_ics(body: bytes) -> bool:
+    """True if ``body`` opens like an iCalendar stream (ignoring BOM + whitespace)."""
+    head = body.lstrip(b"\xef\xbb\xbf \t\r\n")[:15]
+    return head.upper() == b"BEGIN:VCALENDAR"
+
+
 class ForecastClient:
     """Thin client over an ICS calendar feed."""
 
@@ -57,6 +63,8 @@ class ForecastClient:
                     headers={"User-Agent": "forekast-meshtastic-goodnight/0.1"},
                 )
                 resp.raise_for_status()
+                if not _looks_like_ics(resp.content):
+                    raise requests.RequestException("response body is not an ICS calendar")
                 return resp.content
             except (requests.RequestException, OSError) as e:
                 last_exc = e
@@ -93,8 +101,8 @@ class ForecastClient:
             try:
                 cal = Calendar.from_ical(ics_bytes)
             except Exception as e:
-                logger.error("ics parse error: %s", e)
-                return []
+                # Unparseable is not the same as a day with no events.
+                raise ForecastFetchError(f"ics parse error: {e}") from e
             return [s for s in self._walk_icalendar(cal, target_str) if s]
         except ImportError:
             return [s for s in self._fallback_parse(ics_bytes, target_str) if s]

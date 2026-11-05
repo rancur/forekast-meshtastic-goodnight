@@ -39,17 +39,15 @@ def post_goodnight(
     tomorrow = fc.get_tomorrow()
     try:
         ics = fc.fetch_ics()
+        events = fc.events_for_date(ics, tomorrow)
     except ForecastFetchError as e:
-        # Build a fallback "calendar offline" message so the mesh still gets a
-        # goodnight ping — silence is worse than a degraded message.
-        logger.error("calendar fetch failed: %s", e)
-        message = format_goodnight([], tomorrow, cfg.message)
-        if dry_run:
-            return PostResult(success=False, message=message, reason=str(e))
-        ok = mm.post_message(message, label="goodnight (calendar offline)")
-        return PostResult(success=ok, message=message, reason=str(e), sent=ok)
+        # A dead or unusable calendar is NOT an empty calendar. Formatting []
+        # here would broadcast a confident "Nothing scheduled" for a night we
+        # cannot vouch for, indistinguishable from a genuinely quiet night.
+        # Stay silent and let the caller fail loudly instead.
+        logger.error("calendar unavailable, not posting: %s", e)
+        return PostResult(success=False, message="", reason=str(e), sent=False)
 
-    events = fc.events_for_date(ics, tomorrow)
     message = format_goodnight(events, tomorrow, cfg.message)
     logger.info("goodnight message: %s", message)
 

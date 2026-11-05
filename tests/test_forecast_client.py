@@ -69,10 +69,57 @@ def test_events_for_date_empty_when_no_matches(
     assert out == []
 
 
-def test_events_for_date_invalid_ics_returns_empty(stub_config: AppConfig) -> None:
+def test_events_for_date_invalid_ics_raises(stub_config: AppConfig) -> None:
+    """Unparseable must not read as an empty day."""
     fc = ForecastClient(stub_config)
-    out = fc.events_for_date(b"this is not ics", date(2026, 5, 30))
-    assert out == []
+    with pytest.raises(ForecastFetchError):
+        fc.events_for_date(b"BEGIN:VCALENDAR\r\nthis is not ics\r\n", date(2026, 5, 30))
+
+
+@pytest.mark.parametrize(
+    "body",
+    [
+        b"<html><body>502 Bad Gateway</body></html>",
+        b"",
+        b"   \r\n",
+        b'{"error": "maintenance"}',
+    ],
+)
+def test_fetch_ics_200_non_ics_body_raises(stub_config: AppConfig, body: bytes) -> None:
+    fc = ForecastClient(stub_config)
+    with requests_mock.Mocker() as m:
+        m.get(stub_config.calendar.url, content=body)
+        with pytest.raises(ForecastFetchError) as exc:
+            fc.fetch_ics()
+    assert "not an ICS calendar" in str(exc.value)
+    assert m.call_count == stub_config.calendar.max_attempts
+
+
+def test_fetch_ics_retries_after_200_non_ics_body(
+    stub_config: AppConfig, sample_ics_two_events: bytes
+) -> None:
+    fc = ForecastClient(stub_config)
+    with requests_mock.Mocker() as m:
+        m.get(
+            stub_config.calendar.url,
+            [
+                {"status_code": 200, "text": "<html>maintenance</html>"},
+                {"status_code": 200, "content": sample_ics_two_events},
+            ],
+        )
+        out = fc.fetch_ics()
+    assert out == sample_ics_two_events
+
+
+@pytest.mark.parametrize("prefix", [b"\xef\xbb\xbf", b"\r\n  ", b""])
+def test_fetch_ics_accepts_bom_whitespace_and_lowercase(
+    stub_config: AppConfig, sample_ics_two_events: bytes, prefix: bytes
+) -> None:
+    body = prefix + sample_ics_two_events.replace(b"BEGIN:VCALENDAR", b"begin:vcalendar", 1)
+    fc = ForecastClient(stub_config)
+    with requests_mock.Mocker() as m:
+        m.get(stub_config.calendar.url, content=body)
+        assert fc.fetch_ics() == body
 
 
 def test_get_local_now_returns_aware_datetime(stub_config: AppConfig) -> None:
