@@ -104,7 +104,7 @@ Goodnight mesh! Tomorrow: Nothing scheduled. DM 'forekast tomorrow' for full lis
 Goodnight mesh! Tomorrow: AZ Mesh meetup 6pm @ Snooze. Astro night @ South Mtn (+3 more). DM 'forekast tomorrow' for full list
 ```
 
-If the calendar is unreachable at broadcast time, the mesh still gets a goodnight ping (silence is worse than a degraded message) — the message falls back to the no-events branch and the failure is logged.
+If the calendar is unreachable at broadcast time, or responds with something that isn't a valid ICS calendar, nothing is posted: an unknown night is not a quiet night. The failure is logged and `post-goodnight` exits non-zero. A valid calendar with no events tomorrow still posts the no-events message.
 
 ---
 
